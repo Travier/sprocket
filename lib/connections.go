@@ -11,6 +11,6 @@ type TCPConnection struct {
 	Instance net.Conn
 }
 
-func SendMessage(conn TCPConnection, message string) {
+func (conn TCPConnection) SendMessage(message string) {
 	conn.Instance.Write([]byte(message + "\n"))
 }

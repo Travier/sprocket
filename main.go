@@ -7,7 +7,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"time"
 
 	. "github.com/Travier/sprocket/lib"
 	xid "github.com/rs/xid"
@@ -72,14 +71,21 @@ func handleMessage(conn TCPConnection, message string) {
 			if len(parts) != 2 {
 				break
 			}
-			fmt.Println(conn.ID.String() + " would like to join a channel")
+
+			did := JoinChannel(channelList, parts[1], conn)
+			if !did {
+				fmt.Println("Could not join channel")
+			}
+			SendChannelMessage(channelList[0], conn.ID.String()+" has joined the channel!")
+
+			fmt.Println(conn.ID.String() + " would like to join a channel " + parts[1])
 		case message == "/motd":
-			SendMessage(conn, "The server is running great today! I wonder if longer texts makes all the difference here prolly but idk")
+			//SendMessage(conn, "The server is running great today! I wonder if longer texts makes all the difference here prolly but idk")
 		case message == "/time":
-			resp := "It is " + time.Now().String() + "\n"
-			SendMessage(conn, resp)
+		//	resp := "It is " + time.Now().String() + "\n"
+		//SendMessage(conn, resp)
 		default:
-			SendMessage(conn, "Unrecognized command.")
+			//SendMessage(conn, "Unrecognized command.")
 		}
 	}
 }
