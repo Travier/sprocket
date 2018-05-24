@@ -15,6 +15,7 @@ import (
 var addr = flag.String("addr", "", "The address to listen to; default is \"\" (all interfaces).")
 var port = flag.Int("port", 9999, "The port to listen on; default is 9999.")
 var channelList = make([]Channel, 1)
+var mainChan = CreateChannel("main")
 
 func main() {
 	fmt.Println("Starting server...")
@@ -24,7 +25,7 @@ func main() {
 	fmt.Printf("Listening on %s.\n", src)
 
 	//create 'main' channel
-	mainChan := CreateChannel("main")
+
 	//add channel to list
 	channelList = append(channelList, mainChan)
 
@@ -72,13 +73,8 @@ func handleMessage(conn TCPConnection, message string) {
 				break
 			}
 
-			did := JoinChannel(channelList, parts[1], conn)
-			if !did {
-				fmt.Println("Could not join channel")
-			}
-			SendChannelMessage(channelList[0], conn.ID.String()+" has joined the channel!")
-
-			fmt.Println(conn.ID.String() + " would like to join a channel " + parts[1])
+			mainChan.Join(conn)
+			mainChan.GlobalMessage(conn.ID.String() + " has joined the channel")
 		case message == "/motd":
 			//SendMessage(conn, "The server is running great today! I wonder if longer texts makes all the difference here prolly but idk")
 		case message == "/time":
