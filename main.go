@@ -8,10 +8,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	. "github.com/Travier/sprocket/lib"
+	xid "github.com/rs/xid"
 )
 
 var addr = flag.String("addr", "", "The address to listen to; default is \"\" (all interfaces).")
 var port = flag.Int("port", 9999, "The port to listen on; default is 9999.")
+var channelList = make([]Channel, 1)
 
 func main() {
 	fmt.Println("Starting server...")
@@ -20,8 +24,10 @@ func main() {
 	listener, _ := net.Listen("tcp", src)
 	fmt.Printf("Listening on %s.\n", src)
 
-	channelList := make([]Channel)
-	mainChan := createChannel("main")
+	//create 'main' channel
+	mainChan := CreateChannel("main")
+	//add channel to list
+	channelList = append(channelList, mainChan)
 
 	defer listener.Close()
 
@@ -31,20 +37,22 @@ func main() {
 			fmt.Printf("Some connection error: %s\n", err)
 		}
 
-		go handleConnection(conn)
+		connection := TCPConnection{ID: xid.New(), Instance: conn}
+
+		go handleConnection(connection)
 	}
 }
 
-func handleConnection(conn net.Conn) {
-	remoteAddr := conn.RemoteAddr().String()
+func handleConnection(conn TCPConnection) {
+	remoteAddr := conn.Instance.RemoteAddr().String()
 	fmt.Println("Client connected from " + remoteAddr)
 
-	scanner := bufio.NewScanner(conn)
+	scanner := bufio.NewScanner(conn.Instance)
 
 	for {
 		ok := scanner.Scan()
 
-		handleMessage(scanner.Text(), conn)
+		handleMessage(conn, scanner.Text())
 
 		if !ok {
 			break
@@ -54,12 +62,8 @@ func handleConnection(conn net.Conn) {
 	fmt.Println("Client at " + remoteAddr + " disconnected.")
 }
 
-func handleMessage(message string, conn net.Conn) {
+func handleMessage(conn TCPConnection, message string) {
 	fmt.Println("> " + message)
-
-	if strings.Contains("/channel", message) {
-
-	}
 
 	if message[0] == '/' {
 		switch {
@@ -68,18 +72,14 @@ func handleMessage(message string, conn net.Conn) {
 			if len(parts) != 2 {
 				break
 			}
-
+			fmt.Println(conn.ID.String() + " would like to join a channel")
 		case message == "/motd":
-			sendMessage(conn, "The server is running great today! I wonder if longer texts makes all the difference here prolly but idk")
+			SendMessage(conn, "The server is running great today! I wonder if longer texts makes all the difference here prolly but idk")
 		case message == "/time":
 			resp := "It is " + time.Now().String() + "\n"
-			sendMessage(conn, resp)
+			SendMessage(conn, resp)
 		default:
-			sendMessage(conn, "Unrecognized command.")
+			SendMessage(conn, "Unrecognized command.")
 		}
 	}
-}
-
-func sendMessage(conn net.Conn, message string) {
-	conn.Write([]byte(message + "\n"))
 }

@@ -1,4 +1,4 @@
-package channels
+package lib
 
 import "net"
 
@@ -8,7 +8,11 @@ type Channel struct {
 	connections []net.Conn
 }
 
-func createChannel(name string) Channel {
+func JoinChannel(list []Channel) {
+
+}
+
+func CreateChannel(name string) Channel {
 	channel := Channel{name: name}
 
 	return channel
