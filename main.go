@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 
 	. "github.com/Travier/sprocket/lib"
 	xid "github.com/rs/xid"
@@ -47,6 +46,8 @@ func handleConnection(conn TCPConnection) {
 	remoteAddr := conn.Instance.RemoteAddr().String()
 	fmt.Println("Client connected from " + remoteAddr)
 
+	mainChan.Join(conn)
+
 	scanner := bufio.NewScanner(conn.Instance)
 
 	for {
@@ -63,18 +64,8 @@ func handleConnection(conn TCPConnection) {
 }
 
 func handleMessage(conn TCPConnection, message string) {
-	fmt.Println("> " + message)
-
 	if message[0] == '/' {
 		switch {
-		case strings.Contains(message, "/channel"):
-			parts := strings.Split(message, " ")
-			if len(parts) != 2 {
-				break
-			}
-
-			mainChan.Join(conn)
-			mainChan.GlobalMessage(conn.ID.String() + " has joined the channel")
 		case message == "/motd":
 			//SendMessage(conn, "The server is running great today! I wonder if longer texts makes all the difference here prolly but idk")
 		case message == "/time":
@@ -83,5 +74,7 @@ func handleMessage(conn TCPConnection, message string) {
 		default:
 			//SendMessage(conn, "Unrecognized command.")
 		}
+	} else {
+		mainChan.GlobalMessage(message)
 	}
 }
