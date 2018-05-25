@@ -8,12 +8,13 @@ import (
 	"strconv"
 
 	. "github.com/Travier/sprocket/lib"
-	xid "github.com/rs/xid"
+	"github.com/rs/xid"
 )
 
 var addr = flag.String("addr", "", "The address to listen to; default is \"\" (all interfaces).")
 var port = flag.Int("port", 9999, "The port to listen on; default is 9999.")
 var channelList = make([]Channel, 1)
+var userList = make([]User, 0)
 var mainChan = CreateChannel("main")
 
 func main() {
@@ -36,15 +37,16 @@ func main() {
 			fmt.Printf("Some connection error: %s\n", err)
 		}
 
-		connection := TCPConnection{ID: xid.New(), Instance: conn}
-
 		go handleConnection(connection)
 	}
 }
 
-func handleConnection(conn TCPConnection) {
-	remoteAddr := conn.Instance.RemoteAddr().String()
+func handleConnection(conn net.Conn) {
+	remoteAddr := conn.RemoteAddr().String()
 	fmt.Println("Client connected from " + remoteAddr)
+
+	user := *User{id: xid.New(), Nick: "", Connection: conn}
+	userList = append(userList, user)
 
 	mainChan.Join(conn)
 
@@ -53,7 +55,7 @@ func handleConnection(conn TCPConnection) {
 	for {
 		ok := scanner.Scan()
 
-		handleMessage(conn, scanner.Text())
+		handleMessage(user, scanner.Text())
 
 		if !ok {
 			break
@@ -63,18 +65,17 @@ func handleConnection(conn TCPConnection) {
 	fmt.Println("Client at " + remoteAddr + " disconnected.")
 }
 
-func handleMessage(conn TCPConnection, message string) {
-	if message[0] == '/' {
-		switch {
-		case message == "/motd":
-			//SendMessage(conn, "The server is running great today! I wonder if longer texts makes all the difference here prolly but idk")
-		case message == "/time":
-		//	resp := "It is " + time.Now().String() + "\n"
-		//SendMessage(conn, resp)
-		default:
-			//SendMessage(conn, "Unrecognized command.")
-		}
-	} else {
-		mainChan.GlobalMessage(message)
+func handleMessage(user *User, message string) {
+
+	if isCommand("/nick", message) {
+
 	}
+}
+
+func isCommand(command string, input) bool {
+	if input.Contains(command) {
+		return true
+	}
+
+	return false
 }
